@@ -28,7 +28,7 @@ Guidelines for generating diagrams:
 When the user asks to modify an element, use the modifyDiagram tool with the element's id.`;
 
 export class DesignAgent extends AIChatAgent<Env> {
-  async onChatMessage() {
+  async onChatMessage(_onFinish: any, options: any) {
     const openai = createOpenAI({ apiKey: this.env.OPENAI_API_KEY });
 
     const result = streamText({
@@ -37,6 +37,8 @@ export class DesignAgent extends AIChatAgent<Env> {
       messages: await convertToModelMessages(this.messages),
       tools,
       stopWhen: stepCountIs(5),
+      abortSignal: options?.abortSignal,
+
     });
 
     return result.toUIMessageStreamResponse();
