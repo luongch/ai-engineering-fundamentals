@@ -4,7 +4,7 @@ import type { Message } from "./types";
 import { tool, type UIMessage } from "ai";
 
 interface MessageBubbleProps {
-  message: Message;
+  message: UIMessage;
 }
 
 function getToolStatus(state?: string) {
