@@ -10,7 +10,7 @@ import {
   type LanguageModel,
   type ModelMessage,
 } from "ai";
-import { tools } from "./tools";
+import { buildTools } from "./tools";
 import { serializeCanvasState } from "./context/canvas-state";
 import type { ExcalidrawElement } from "./schemas";
 
@@ -135,7 +135,7 @@ export function streamAgent({
     model,
     system: buildSystem(system, canvasState),
     messages,
-    tools,
+    tools: buildTools(),
     stopWhen: stepCountIs(maxSteps),
   });
 }
@@ -153,7 +153,7 @@ export async function runAgent({
     model,
     system: buildSystem(system, canvasState),
     messages,
-    tools,
+    tools: buildTools(),
     stopWhen: stepCountIs(maxSteps),
   });
   return {

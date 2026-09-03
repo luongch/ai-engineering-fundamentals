@@ -38,7 +38,7 @@ export class DesignAgent extends AIChatAgent<Env> {
     const result = streamAgent({
       model,
       messages,
-      canvasState,
+      // canvasState,
     });
 
     return result.toUIMessageStreamResponse();
