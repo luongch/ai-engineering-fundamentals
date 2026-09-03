@@ -28,18 +28,21 @@ type CanvasStatePart = {
 // }
 
 export class DesignAgent extends AIChatAgent<Env> {
-  async onChatMessage() {
+  async onChatMessage(_onFinish: any, options: any) {
     const openai = createOpenAI({ apiKey: this.env.OPENAI_API_KEY });
     const model = openai("gpt-5.4-mini");
 
     // const canvasState = extractCanvasState(this.messages);
     const messages = await convertToModelMessages(this.messages);
 
+    // console.log("abort signal:", options?.abortSignal);
+
     const result = streamAgent({
       model,
       messages,
       env: {TAVILY_API_KEY: this.env.TAVILY_API_KEY},
       // canvasState,
+      abortSignal: options?.abortSignal,
     });
 
     return result.toUIMessageStreamResponse();
