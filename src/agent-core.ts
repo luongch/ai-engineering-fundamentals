@@ -117,6 +117,7 @@ interface AgentArgs {
   canvasState?: ExcalidrawElement[];
   system?: string;
   maxSteps?: number;
+  env?: any;
 }
 
 function buildSystem(base: string, canvasState: ExcalidrawElement[] | undefined): string {
@@ -130,12 +131,13 @@ export function streamAgent({
   canvasState,
   system = SYSTEM_PROMPT,
   maxSteps = 5,
+  env
 }: AgentArgs) {
   return streamText({
     model,
     system: buildSystem(system, canvasState),
     messages,
-    tools: buildTools(),
+    tools: buildTools(env),
     stopWhen: stepCountIs(maxSteps),
   });
 }

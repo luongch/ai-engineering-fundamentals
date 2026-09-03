@@ -18,15 +18,12 @@ import "./App.css";
 // module level so React StrictMode's double mount doesn't change it.
 const sessionId = crypto.randomUUID();
 
-function stripNulls (obj: any) {
-  const out:any  = {}
+function stripNulls(obj: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj)) {
-    if (v! == null) {
-      out[k] = v
-    }
+    if (v !== null) out[k] = v;
   }
-
-  return out
+  return out;
 }
 
 export default function App() {
