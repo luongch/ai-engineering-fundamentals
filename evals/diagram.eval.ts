@@ -23,6 +23,9 @@ import { labelKeywordScorer } from "./scorers/labelKeyword";
 // evals/scorers/ but are deliberately not wired here. They measure visual
 // artifact quality, which is lesson 8's subject. Lesson 8 starts by wiring
 // them into this file.
+import {boundArrowsScorer} from './scorers/boundArrows'
+import {boundLabelsScorer} from './scorers/boundLabels'
+import {connectivityScorer} from './scorers/connectivity'
 
 config({ path: ".dev.vars" });
 
@@ -63,5 +66,8 @@ Eval<GoldenTestCase, AgentOutput, GoldenTestCase>("Diagram Agent", {
     structureScorer,
     toolChoiceScorer,
     labelKeywordScorer,
+    boundArrowsScorer,
+    boundLabelsScorer,
+    connectivityScorer
   ],
 });

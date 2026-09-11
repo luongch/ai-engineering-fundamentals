@@ -14,6 +14,7 @@ import {
 import { z } from "zod";
 import { buildTools } from "./tools";
 import { serializeCanvasState } from "./context/canvas-state";
+import { applySkeleton } from "./context/applySkeleton";
 
 export const SYSTEM_PROMPT = `# Role
 
@@ -31,8 +32,8 @@ You are a technical diagram design assistant that controls an Excalidraw canvas.
 
 These are not suggestions. Violating any of them produces a broken diagram.
 
-1. **Labels are SEPARATE text elements with \`containerId\`.** Setting \`text\` on a rectangle, ellipse, or diamond does NOT render anything inside the box. To label a shape, create the shape AND a separate text element with \`containerId\` set to the shape's id. Excalidraw centers the text inside the container automatically. Always do this in pairs.
-2. **Every connecting arrow must bind both ends.** An arrow that connects two shapes MUST set \`startBinding.elementId\` to one shape's id and \`endBinding.elementId\` to the other shape's id. The shapes must exist in the same call or already be on the canvas. Arrows without both bindings float free in space and are a bug.
+1. **Label shapes via the "label" field on the shape itself.** To put text inside a rectangle, ellipse, or diamond, set the shape's "label: { text: "..." }" field. Do NOT create a separate text element for shape labels. Standalone text elements are for floating annotations only.
+2. **Every connecting arrow must bind both ends.** An arrow that connects two shapes MUST set "start: { id: "..." }" to one shape's id and "end: { id: "..." }" to the other shape's id. The shapes must exist in the same call or already be on the canvas. Arrows without both bindings float free in space and are a bug.
 3. **No degenerate elements.** Width and height must be at least 20. No zero size shapes. No empty text elements.
 4. **No overlapping elements.** Use the layout grid below. Two boxes on top of each other is always wrong.
 5. **Pick concise meaningful ids.** \`rect_user\`, \`rect_auth_server\`, \`arrow_user_auth\`. Never \`element_42\`, never random uuids.
@@ -99,7 +100,23 @@ Three boxes, three bound text labels, two bound arrows.
 
 **Recolor**: User: "make the login box red." Call \`queryCanvas({})\`, find \`rect_login\`, then \`updateElements({ updates: [{ id: "rect_login", fields: { backgroundColor: "#fa5252", ...nulls } }] })\`.
 
-**Additive**: User: "add a Cache box between the API and the Database." Call \`queryCanvas({})\`, then \`addElements\` with \`rect_cache\` plus \`text_cache\` at the same coords plus arrows from \`rect_api\` to \`rect_cache\` and from \`rect_cache\` to \`rect_db\` with both bindings set. Do not redraw \`rect_api\` or \`rect_db\`.`;
+**Additive**: User: "add a Cache box between the API and the Database." Call \`queryCanvas({})\`, then \`addElements\` with \`rect_cache\` plus \`text_cache\` at the same coords plus arrows from \`rect_api\` to \`rect_cache\` and from \`rect_cache\` to \`rect_db\` with both bindings set. Do not redraw \`rect_api\` or \`rect_db\`.
+
+- Do NOT create a separate text element to label a shape. Use the shape's \`label\` field. A free floating text element placed visually on top of a box is NOT a label and will not move with the box.
+- Do NOT create arrows for shape to shape connections without setting \`start\` and \`end\`.
+- Do NOT create arrows where one or both endpoints reference an id that doesn't exist in this call or on the canvas. The arrow will float.
+
+Worked example. User: "draw a User -> API -> Database flow." Five elements:
+1. rect_user rectangle at (100, 100) 200x80, label.text="User"
+2. rect_api  rectangle at (380, 100) 200x80, label.text="API"
+3. rect_db   rectangle at (660, 100) 200x80, label.text="Database"
+4. arrow_user_api arrow with start.id="rect_user", end.id="rect_api"
+5. arrow_api_db   arrow with start.id="rect_api",  end.id="rect_db"
+
+
+`;
+
+
 
 interface AgentArgs {
   model: LanguageModel;
@@ -161,8 +178,9 @@ export async function runAgent({
       description: baseTools.addElements.description,
       inputSchema: baseTools.addElements.inputSchema as never,
       execute: async ({ elements }: { elements: unknown[] }) => {
-        for (const el of elements) sim.push({ ...(el as object) });
-        return { elements };
+        const runtime = applySkeleton(elements as Record<string, unknown>[]);
+        for (const el of runtime) sim.push({ ...el });
+        return { added: runtime.length };
       },
     }),
     updateElements: tool({
